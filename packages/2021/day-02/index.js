@@ -13,15 +13,16 @@ const stepOne = (values) => {
       groups: { direction, value },
     } = match.exec(v);
 
+    let amount = parseInt(value);
     switch (direction) {
       case "up":
-        y -= parseInt(value);
+        y -= amount;
         break;
       case "down":
-        y += parseInt(value);
+        y += amount;
         break;
       case "forward":
-        x += parseInt(value);
+        x += amount;
         break;
       default:
         break;
