@@ -5,11 +5,7 @@ const _ = require("lodash");
 const read = util.promisify(fs.readFile);
 
 const lookAHead = (x, y, index, bassins, bassinsIndex) => {
-  if (
-    y > 0 &&
-    !bassinsIndex[`y${y - 1}x${x}`] &&
-    _.get(bassins, [y - 1, x], " ") !== " "
-  ) {
+  if (y > 0 && !bassinsIndex[`y${y - 1}x${x}`] && bassins[y - 1][x] !== " ") {
     bassinsIndex[`y${y - 1}x${x}`] = index;
     lookAHead(x, y - 1, index, bassins, bassinsIndex);
   }
@@ -17,17 +13,13 @@ const lookAHead = (x, y, index, bassins, bassinsIndex) => {
   if (
     y < bassins.length - 1 &&
     !bassinsIndex[`y${y + 1}x${x}`] &&
-    _.get(bassins, [y + 1, x], " ") !== " "
+    bassins[y + 1][x] !== " "
   ) {
     bassinsIndex[`y${y + 1}x${x}`] = index;
     lookAHead(x, y + 1, index, bassins, bassinsIndex);
   }
 
-  if (
-    x > 0 &&
-    !bassinsIndex[`y${y}x${x - 1}`] &&
-    _.get(bassins, [y, x - 1], " ") !== " "
-  ) {
+  if (x > 0 && !bassinsIndex[`y${y}x${x - 1}`] && bassins[y][x - 1] !== " ") {
     bassinsIndex[`y${y}x${x - 1}`] = index;
     lookAHead(x - 1, y, index, bassins, bassinsIndex);
   }
@@ -35,7 +27,7 @@ const lookAHead = (x, y, index, bassins, bassinsIndex) => {
   if (
     x < bassins[y].length - 1 &&
     !bassinsIndex[`y${y}x${x + 1}`] &&
-    _.get(bassins, [y, x + 1], " ") !== " "
+    bassins[y][x + 1] !== " "
   ) {
     bassinsIndex[`y${y}x${x + 1}`] = index;
     lookAHead(x + 1, y, index, bassins, bassinsIndex);
@@ -43,7 +35,6 @@ const lookAHead = (x, y, index, bassins, bassinsIndex) => {
 };
 
 const process = (values, debug) => {
-  const points = [];
   const bassins = [];
   const bassinsIndex = {};
 
@@ -55,17 +46,18 @@ const process = (values, debug) => {
       }
       bassins[y].push(" ");
       if (
-        value < _.get(values, [y - 1, x], "9") ||
-        value < _.get(values, [y + 1, x], "9") ||
-        value < _.get(values, [y, x - 1], "9") ||
-        value < _.get(values, [y, x + 1], "9")
+        value !== 9 &&
+        (_.get(values, [y - 1, x], "9") !== "9" ||
+          _.get(values, [y + 1, x], "9") !== "9" ||
+          _.get(values, [y, x - 1], "9") !== "9" ||
+          _.get(values, [y, x + 1], "9") !== "9")
       ) {
-        points.push({ x, y, value });
         bassins[y][x] = value;
       }
     }
   }
 
+  let a = "a".charCodeAt(0);
   let index = 0;
   for (let y = 0; y < bassins.length; y++) {
     // console.log(...bassins[y]);
@@ -73,32 +65,34 @@ const process = (values, debug) => {
     for (let x = 0; x < bassins[y].length; x++) {
       if (bassinsIndex[`y${y}x${x}`]) {
         // skip
-      } else if (_.get(bassins, [y, x], " ") !== " ") {
+      } else if (bassins[y][x] !== " ") {
+        let coded =
+          String.fromCharCode(Math.floor(index / 26) + a) +
+          String.fromCharCode((index % 26) + a);
+        bassinsIndex[`y${y}x${x}`] = coded;
+        lookAHead(x, y, coded, bassins, bassinsIndex);
         index++;
-        bassinsIndex[`y${y}x${x}`] = index;
-        lookAHead(x, y, index, bassins, bassinsIndex);
       }
     }
   }
 
-  // const csv = [];
-  // for (let y = 0; y < bassins.length; y++) {
-  //   let log = [];
-  //   for (let x = 0; x < bassins[y].length; x++) {
-  //     log.push(bassinsIndex[`y${y}x${x}`] || "");
-  //   }
-  //   csv.push(log);
-  // }
-
-  // fs.writeFileSync("result.csv", csv.join("\n"));
+  /*
+  const csv = [];
+  for (let y = 0; y < bassins.length; y++) {
+    let log = [];
+    for (let x = 0; x < bassins[y].length; x++) {
+      log.push(bassinsIndex[`y${y}x${x}`] || "");
+    }
+    csv.push(log);
+  }
+  fs.writeFileSync("result2.csv", csv.join("\n"));
+   */
 
   const culsters = {};
   const sizes = _.reduce(
     bassinsIndex,
     (acc, v) => {
-      if (v) {
-        acc[v] = acc[v] ? acc[v] + 1 : 1;
-      }
+      acc[v] = acc[v] ? acc[v] + 1 : 1;
       culsters[v] = acc[v];
       return acc;
     },
